@@ -1,0 +1,134 @@
+{
+  "suggestions": [
+    {
+      "placePrediction": {
+        "placeId": "ChIJ_wakasu_camp_001",
+        "text": { "text": "若洲海浜公園キャンプ場, 東京都江東区若洲３丁目２−１" },
+        "types": ["campground", "park", "tourist_attraction"],
+        "leisure_type": "camp",
+        "geometry": { "location": { "lat": 35.6171, "lng": 139.8415 } },
+        "reviews": [
+          { "author": "user_a", "rating": 5, "text": "初めてのキャンプでしたが、トイレがホテルのように綺麗で女性でも安心でした。レンタル一式が揃っているので手ぶらで行けます。店員さんが親切にテントの張り方を教えてくれました。" },
+          { "author": "user_b", "rating": 4, "text": "駅からバスが出ていてアクセスのしやすさは抜群。道中の山道のような険しさもないのでペーパードライバーでも安心。週末は結構混雑しますが設備が清潔で快適です。" }
+        ]
+      }
+    },
+    {
+      "placePrediction": {
+        "placeId": "ChIJ_shonandaira_002",
+        "text": { "text": "湘南平平塚テレビ中継局展望台, 神奈川県平塚市万田７９０" },
+        "types": ["hiking_area", "point_of_interest"],
+        "leisure_type": "hiking",
+        "geometry": { "location": { "lat": 35.3188, "lng": 139.3136 } },
+        "reviews": [
+          { "author": "user_c", "rating": 4, "text": "ハイキング初心者コースを歩きました。道がしっかり整備されていて安全性が高いです。ただ山頂付近の駐車場までの道はカーブが多く運転のしやすさは少し慣れが必要かも。トイレは普通に綺麗です。" },
+          { "author": "user_d", "rating": 5, "text": "手ぶらでふらっと行って絶景を楽しめました。子供連れでも安心して歩ける安全なルートです。自動販売機や売店もあるので初心者向けとして完璧だと思います。" }
+        ]
+      }
+    },
+    {
+      "placePrediction": {
+        "placeId": "ChIJ_jonanjima_003",
+        "text": { "text": "城南島海浜公園キャンプ場, 東京都大田区城南島４丁目２−２" },
+        "types": ["campground", "park"],
+        "leisure_type": "camp",
+        "geometry": { "location": { "lat": 35.5583, "lng": 139.7851 } },
+        "reviews": [
+          { "author": "user_e", "rating": 4, "text": "道具のレンタルが非常に充実しており、手ぶらBBQには最適の場所です。足場も平らで小さな子供がいても安全性に問題ありません。ただ、直前の道が大型トラックが多くて少し運転しづらいかも。" },
+          { "author": "user_f", "rating": 3, "text": "飛行機が間近で見えて最高ですが、夜間は音が気になる人もいるかも。水回りやトイレは定期的に清掃されていて清潔度が高いです。売店で必要なものは何でも揃います。" }
+        ]
+      }
+    },
+    {
+      "placePrediction": {
+        "placeId": "ChIJ_daikoku_fising_004",
+        "text": { "text": "大黒海づり施設, 神奈川県横浜市鶴見区大黒ふ頭１" },
+        "types": ["fishing_pier", "tourist_attraction"],
+        "leisure_type": "fishing",
+        "geometry": { "location": { "lat": 35.4542, "lng": 139.6975 } },
+        "reviews": [
+          { "author": "user_g", "rating": 5, "text": "足場に安全柵がしっかり設置されているので、海釣り初心者やファミリーでも安全性が高い。釣具のレンタルやエサの販売もあり、完全に手ぶらで釣りが楽しめます。スタッフのレクチャーも丁寧です。" },
+          { "author": "user_h", "rating": 3, "text": "トイレや水道が完備されていて快適ですが、入場規制がかかるほど混雑しやすいのが難点。車でのアクセスのしやすさは良好ですが、高速を降りてからの大黒ふ頭内のコンテナトレーラーに注意。" }
+        ]
+      }
+    },
+    {
+      "placePrediction": {
+        "placeId": "ChIJ_shimizu_park_005",
+        "text": { "text": "清水公園キャンプ場, 千葉県野田市清水９０６" },
+        "types": ["campground", "amusement_park"],
+        "leisure_type": "camp",
+        "geometry": { "location": { "lat": 35.9575, "lng": 139.8641 } },
+        "reviews": [
+          { "author": "user_i", "rating": 5, "text": "アスレチック併設で退屈しません。バンガローなどの施設が新しく、トイレや水回りは驚くほど綺麗。手ぶらBBQプランは手軽さ抜群で、初心者グループでも大満足でした。" },
+          { "author": "user_j", "rating": 4, "text": "東武線の駅から徒歩圏内なので、公共交通機関でのアクセスのしやすさは100点。車がない学生でも手ぶらで行けるのがありがたい。安全性もしっかり配慮された高規格な施設です。" }
+        ]
+      }
+    },
+    {
+      "placePrediction": {
+        "placeId": "ChIJ_motofutsu_fishing_006",
+        "text": { "text": "本牧海づり施設, 神奈川県横浜市中区本牧ふ頭１" },
+        "types": ["fishing_pier"],
+        "leisure_type": "fishing",
+        "geometry": { "location": { "lat": 35.4283, "lng": 139.6917 } },
+        "reviews": [
+          { "author": "user_k", "rating": 4, "text": "売店でレンタルタックル（仕掛け付き）を借りられるので手ぶら釣行が可能。管理が行き届いており、トイレも綺麗に掃除されています。初めてでも高確率で魚が釣れるので退屈しません。" },
+          { "author": "user_l", "rating": 3, "text": "釣果は抜群ですが、風速が強くなると桟橋が閉鎖されるため、当日の天候リスクをしっかり確認していく必要があります。周囲に遮るものがないので風対策は必須。" }
+        ]
+      }
+    },
+    {
+      "placePrediction": {
+        "placeId": "ChIJ_takao_hiking_007",
+        "text": { "text": "高尾山 1号路登山道, 東京都八王子市高尾町" },
+        "types": ["hiking_area", "tourist_attraction"],
+        "leisure_type": "hiking",
+        "geometry": { "location": { "lat": 35.6252, "lng": 139.2438 } },
+        "reviews": [
+          { "author": "user_m", "rating": 5, "text": "1号路はすべて舗装されているため、スニーカーの手ぶらスタイルでも安全にハイキングを楽しめます。途中に綺麗なトイレや茶屋が多く、初心者・未経験者でも挫折する要素がありません。" },
+          { "author": "user_n", "rating": 4, "text": "新宿から電車一本でいけるアクセスのしやすさは最強。ただ、シーズン中は信じられないくらい大混雑します。ケーブルカーを使えば体力に自信がなくても頂上まで行けるので安全性が高いです。" }
+        ]
+      }
+    },
+    {
+      "placePrediction": {
+        "placeId": "ChIJ_nagatoro_camp_008",
+        "text": { "text": "長瀞オートキャンプ場, 埼玉県秩父郡長瀞町矢那瀬593-1" },
+        "types": ["campground"],
+        "leisure_type": "camp",
+        "geometry": { "location": { "lat": 36.1082, "lng": 139.1218 } },
+        "reviews": [
+          { "author": "user_o", "rating": 5, "text": "女性専用エリアなどがあり、とにかくトイレやシャワー室の清潔感が素晴らしい。レンタル品もスノーピークなどの良い道具が揃っており、手ぶらでもおしゃれなキャンプが楽しめます。" },
+          { "author": "user_p", "rating": 4, "text": "関越道のICから道一本で来られるため車の運転のしやすさは良好。川沿いですが、キャンプサイトは一段高い場所にあるため安全性も配慮されています。初心者グランピングにもおすすめ。" }
+        ]
+      }
+    },
+    {
+      "placePrediction": {
+        "placeId": "ChIJ_toshima_en_fishing_009",
+        "text": { "text": "多摩湖駅前フィッシングエリア, 東京都東村山市多摩湖町３丁目" },
+        "types": ["fishing_pier", "point_of_interest"],
+        "leisure_type": "fishing",
+        "geometry": { "location": { "lat": 35.7605, "lng": 139.4358 } },
+        "reviews": [
+          { "author": "user_q", "rating": 4, "text": "プールを利用した管理釣り場なので、足場が完璧に平らで安全性はこれ以上ないレベル。駅の目の前なのでアクセスのしやすさも抜群。レンタル完備で手ぶらでニジマス釣りが体験できます。" },
+          { "author": "user_r", "rating": 4, "text": "トイレなどの園内施設が非常に綺麗で不快感がありません。魚が沢山泳いでいるのが見えるので子供も退屈せず、初めての釣り体験にはここが一番安全でおすすめです。" }
+        ]
+      }
+    },
+    {
+      "placePrediction": {
+        "placeId": "ChIJ_mitsui_outout_010",
+        "text": { "text": "三井アウトレットパーク 木更津, 千葉県木更津市金田東３丁目１−１" },
+        "types": ["shopping_mall", "tourist_attraction"],
+        "leisure_type": "shopping",
+        "geometry": { "location": { "lat": 35.4442, "lng": 139.9322 } },
+        "reviews": [
+          { "author": "user_s", "rating": 5, "text": "レジャーの合間の買い物として利用。施設内のトイレや休憩所は文句なしに綺麗で快適。高速の金田ICのすぐ近くでアクセスのしやすさは車なら最高です。手ぶらで1日過ごせます。" },
+          { "author": "user_t", "rating": 4, "text": "完全な屋内・舗装路なので天候リスクがゼロ、雨の日でも安全に楽しめます。週末のフードコートの混雑だけが難点ですが、ベビーカーのレンタルもあり家族連れへの安全性が配慮されています。" }
+        ]
+      }
+    }
+  ]
+}
