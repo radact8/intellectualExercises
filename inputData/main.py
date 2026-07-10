@@ -151,6 +151,8 @@ CREATE TABLE IF NOT EXISTS spots (
 # 5. 既存データをクリアして新しいデータを流し込む
 # 定期実行時、毎回まっさらな状態から最新の形態素解析結果を反映させます
 cursor.execute("DELETE FROM spots")
+# 🔥 これを追加：spotsテーブルの連番カウントを完全に初期化（0クリア）する
+cursor.execute("DELETE FROM sqlite_sequence WHERE name='spots'")
 df.to_sql("spots", conn, if_exists="append", index=False)
 conn.commit()
 conn.close()
