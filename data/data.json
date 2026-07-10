@@ -35,7 +35,7 @@
         "geometry": { "location": { "lat": 35.5583, "lng": 139.7851 } },
         "reviews": [
           { "author": "user_e", "rating": 4, "text": "道具のレンタルが非常に充実しており、手ぶらBBQには最適の場所です。足場も平らで小さな子供がいても安全性に問題ありません。ただ、直前の道が大型トラックが多くて少し運転しづらいかも。" },
-          { "author": "user_f", "rating": 3, "text": "飛行機が間近で見えて最高ですが、夜間は音が気になる人もいるかも。水回りやトイレは定期的に清掃されていて清潔度が高いです。売店で必要なものは何でも揃います。" }
+          { "author": "user_f", "rating": 3, "text": "飛行機が間近で見えて最高ですが、夜間は音が気になる人もいるかも。水回りやトイレは定期的に清鎖されていて清潔度が高いです。売店で必要なものは何でも揃います。" }
         ]
       }
     },
@@ -127,6 +127,136 @@
         "reviews": [
           { "author": "user_s", "rating": 5, "text": "レジャーの合間の買い物として利用。施設内のトイレや休憩所は文句なしに綺麗で快適。高速の金田ICのすぐ近くでアクセスのしやすさは車なら最高です。手ぶらで1日過ごせます。" },
           { "author": "user_t", "rating": 4, "text": "完全な屋内・舗装路なので天候リスクがゼロ、雨の日でも安全に楽しめます。週末のフードコートの混雑だけが難点ですが、ベビーカーのレンタルもあり家族連れへの安全性が配慮されています。" }
+        ]
+      }
+    },
+    {
+      "placePrediction": {
+        "placeId": "ChIJ_okutama_hiking_011",
+        "text": { "text": "奥多摩むかし道ハイキングコース, 東京都西多摩郡奥多摩町氷川" },
+        "types": ["hiking_area", "park"],
+        "leisure_type": "hiking",
+        "geometry": { "location": { "lat": 35.8094, "lng": 139.0969 } },
+        "reviews": [
+          { "author": "user_u", "rating": 4, "text": "奥多摩駅から直結のルートでアクセスのしやすさは良好。道中は山道ですが、危険な箇所にはロープがあり安全性もそれなりに配慮されています。ただ、公衆トイレは綺麗ではないので注意が必要。" },
+          { "author": "user_v", "rating": 3, "text": "自然を満喫できますが、売店などがないため手ぶらで行くのは絶対に無理です。しっかり水分や食料を持参する必要があります。初心者には少し険しいエリアもあります。" }
+        ]
+      }
+    },
+    {
+      "placePrediction": {
+        "placeId": "ChIJ_fujigoko_camp_012",
+        "text": { "text": "PICA富士西湖, 山梨県南都留郡富士河口湖町西湖２０６８−１" },
+        "types": ["campground"],
+        "leisure_type": "camp",
+        "geometry": { "location": { "lat": 35.4988, "lng": 138.6814 } },
+        "reviews": [
+          { "author": "user_w", "rating": 5, "text": "高規格キャンプ場の代名詞。お風呂やトイレが驚くほど綺麗でホテルのような快適さ。ビギナー向けのレンタルセットが充実しており、手ぶらパックなら設営まで手伝ってくれます。" },
+          { "author": "user_x", "rating": 4, "text": "河口湖ICから道が広くアクセスのしやすさは抜群。夜間もスタッフが常駐しているのでファミリー層にも安全性は太鼓判。未経験者がキャンプを始めるには最適な環境です。" }
+        ]
+      }
+    },
+    {
+      "placePrediction": {
+        "placeId": "ChIJ_urayasu_fishing_013",
+        "text": { "text": "浦安市高洲海浜公園, 千葉県浦安市高洲９丁目４" },
+        "types": ["fishing_pier", "park"],
+        "leisure_type": "fishing",
+        "geometry": { "location": { "lat": 35.6264, "lng": 139.9272 } },
+        "reviews": [
+          { "author": "user_y", "rating": 4, "text": "広大な公園で、テラス部分から釣りができます。全面に高い安全柵があるため、子供が走っても危険が全くなく安全性が極めて高い。駐車場も広くて車でのアクセスは抜群に快適。" },
+          { "author": "user_z", "rating": 3, "text": "トイレは公園の公衆トイレなのでそこまで綺麗ではないです。また、近くに釣具のレンタルショップがないため、手ぶらで行くと釣りができないので事前に準備が必要です。" }
+        ]
+      }
+    },
+    {
+      "placePrediction": {
+        "placeId": "ChIJ_tsukuba_hiking_014",
+        "text": { "text": "筑波山 御幸ヶ原コース, 茨城県つくば市筑波" },
+        "types": ["hiking_area", "tourist_attraction"],
+        "leisure_type": "hiking",
+        "geometry": { "location": { "lat": 36.2255, "lng": 140.1069 } },
+        "reviews": [
+          { "author": "user_aa", "rating": 4, "text": "秋葉原からつくばエクスプレスとシャトルバスで一本なので、アクセスのしやすさはかなり良いです。山頂のトイレや売店は新しくて綺麗。初心者でも安心して登れる快適なコース。" },
+          { "author": "user_ab", "rating": 3, "text": "御幸ヶ原コースは岩場が多く、階段も急なので初心者には少し険しいです。油断すると滑るため安全性は中程度。ただケーブルカーが並行しているので、最悪手ぶらでエスケープ可能です。" }
+        ]
+      }
+    },
+    {
+      "placePrediction": {
+        "placeId": "ChIJ_kinugawa_camp_015",
+        "text": { "text": "鬼怒川温泉オートキャンプ場, 栃木県日光市鬼怒川温泉滝１０５３" },
+        "types": ["campground"],
+        "leisure_type": "camp",
+        "geometry": { "location": { "lat": 36.8425, "lng": 139.7214 } },
+        "reviews": [
+          { "author": "user_ac", "rating": 5, "text": "キャンプ場内に本格的な温泉施設があり、水回りやトイレの清潔感は抜群で快適です。レンタル品もBBQコンロからテントまで何でも揃うので、手ぶらでも本格アウトドアが可能。" },
+          { "author": "user_ad", "rating": 4, "text": "鬼怒川温泉駅からタクシーでもすぐの距離でアクセスのしやすさは良好。山が近いですが区画が平らに舗装されており、川沿いの防護壁もしっかりしていて安全性が高くファミリーに安心。" }
+        ]
+      }
+    },
+    {
+      "placePrediction": {
+        "placeId": "ChIJ_wakasu_fishing_016",
+        "text": { "text": "若洲海浜公園海釣り施設, 東京都江東区若洲３丁目２−１" },
+        "types": ["fishing_pier", "park"],
+        "leisure_type": "fishing",
+        "geometry": { "location": { "lat": 35.6152, "lng": 139.8432 } },
+        "reviews": [
+          { "author": "user_ae", "rating": 5, "text": "防波堤に安全柵が設置されていて安全性が高く、東京湾の景色を眺めながら釣りが楽しめます。売店で仕掛け付き竿がレンタルできるため、完璧に手ぶらで来ても数分で釣りをスタートできます。" },
+          { "author": "user_af", "rating": 4, "text": "キャンプ場が隣接しており、大型の多目的トイレもあるため綺麗で使いやすいです。新木場駅からバス一本でアクセス抜群ですが、休日は釣り座の確保が困難なほど混雑します。" }
+        ]
+      }
+    },
+    {
+      "placePrediction": {
+        "placeId": "ChIJ_kamakura_hiking_017",
+        "text": { "text": "天園ハイキングコース, 神奈川県鎌倉市二階堂" },
+        "types": ["hiking_area"],
+        "leisure_type": "hiking",
+        "geometry": { "location": { "lat": 35.3268, "lng": 139.5694 } },
+        "reviews": [
+          { "author": "user_ag", "rating": 4, "text": "北鎌倉駅からお寺を経由して歩けるため、観光がてらのアクセスのしやすさは最強です。道は比較的平らでスニーカーでも危険はなく安全性は高い。手ぶら観光のついでに自然を楽しめます。" },
+          { "author": "user_ah", "rating": 3, "text": "コースの途中にはトイレが全くないため、事前に済ませるのが必須。雨の翌日は粘土質の土が非常に滑るので、初心者には少し怖いかもしれない険しいエリアも一部あります。" }
+        ]
+      }
+    },
+    {
+      "placePrediction": {
+        "placeId": "ChIJ_chiba_port_fishing_018",
+        "text": { "text": "千葉ポートパーク 突堤, 千葉県千葉市中央区中央港１丁目" },
+        "types": ["fishing_pier", "park"],
+        "leisure_type": "fishing",
+        "geometry": { "location": { "lat": 35.6025, "lng": 140.0988 } },
+        "reviews": [
+          { "author": "user_ai", "rating": 4, "text": "千葉みなと駅から徒歩圏内で、車がない学生グループでもアクセスのしやすさは申し分なし。足場はコンクリートで平らですが、安全柵がないため小さな子供連れは少し危険を感じるかも。" },
+          { "author": "user_aj", "rating": 3, "text": "ポートタワー内のトイレが利用できるため非常に綺麗で快適です。ただ園内にレンタル専門の釣具店はないので手ぶらでは遊べません。道具の事前の持ち込みが必要です。" }
+        ]
+      }
+    },
+    {
+      "placePrediction": {
+        "placeId": "ChIJ_tanzawa_hiking_019",
+        "text": { "text": "丹沢 大倉尾根登山道, 神奈川県秦野市戸川" },
+        "types": ["hiking_area"],
+        "leisure_type": "hiking",
+        "geometry": { "location": { "lat": 35.4382, "lng": 139.1724 } },
+        "reviews": [
+          { "author": "user_ak", "rating": 3, "text": "渋沢駅からバスで一本とアクセスのしやすさは良いですが、通称バカ尾根と呼ばれる果てしない階段が続きます。未経験者が手ぶら同然で挑むと確実に挫折する険しいルートです。" },
+          { "author": "user_al", "rating": 4, "text": "登山道自体は広く整備されており迷う危険はありませんが、体力的には全く安全ではないです。山小屋のトイレはチップ制ですが綺麗に維持されています。本格派向けのコース。" }
+        ]
+      }
+    },
+    {
+      "placePrediction": {
+        "placeId": "ChIJ_woodland_both_020",
+        "text": { "text": "氷川キャンプ場, 東京都西多摩郡奥多摩町氷川７０２" },
+        "types": ["campground"],
+        "leisure_type": "camp",
+        "geometry": { "location": { "lat": 35.8078, "lng": 139.0964 } },
+        "reviews": [
+          { "author": "user_am", "rating": 4, "text": "奥多摩駅から徒歩5分という、電車キャンパーにとってアクセスのしやすさは神レベル。直火OKの河原サイトですが足場は大きな石が多く、子供の転倒リスクなど安全性には少し注意が必要。" },
+          { "author": "user_an", "rating": 5, "text": "売店での薪や炭の販売、レンタルバンガローがあり手ぶらBBQも快適。トイレやシャワー室などの水回りはリニューアルされていて非常に綺麗で、初心者女子でも不快感ゼロです。" }
         ]
       }
     }
