@@ -23,13 +23,14 @@ type Spot struct {
 	ScoreRental float64 `json:"score_rental"`
 	ScoreSafety float64 `json:"score_safety"`
 	ScoreAccess float64 `json:"score_access"`
-	FinalScore  float64 `json:"final_score"` // Go側で計算して格納する
+	FinalScore  float64 `json:"final_score"`
 }
 
-// フロントエンド（ユーザー入力）から届くリクエストの構造体
+// フロントエンドから届くリクエストの構造体
 type RecommendRequest struct {
 	LeisureType  string  `json:"leisure_type"`
 	Experience   string  `json:"experience"`
+	WeightToilet float64 `json:"weight_toilet"`
 	WeightToilet float64 `json:"weight_toilet"`
 	WeightRental float64 `json:"weight_rental"`
 	UserText     string  `json:"user_text"`
@@ -46,26 +47,14 @@ var leisureBaseEase = map[string]float64{
 func getWeatherSafetyFactor(leisureType string, wind, rain float64) float64 {
 	switch leisureType {
 	case "fishing":
-		if wind >= 8.0 || rain >= 5.0 {
-			return 0.0
-		}
-		if wind >= 4.0 || rain >= 1.0 {
-			return 0.5
-		}
+		if wind >= 8.0 || rain >= 5.0 { return 0.0 }
+		if wind >= 4.0 || rain >= 1.0 { return 0.5 }
 	case "camp":
-		if wind >= 7.0 || rain >= 10.0 {
-			return 0.0
-		}
-		if wind >= 4.0 || rain >= 2.0 {
-			return 0.5
-		}
+		if wind >= 7.0 || rain >= 10.0 { return 0.0 }
+		if wind >= 4.0 || rain >= 2.0 { return 0.5 }
 	case "hiking":
-		if wind >= 10.0 || rain >= 8.0 {
-			return 0.0
-		}
-		if wind >= 5.0 || rain >= 3.0 {
-			return 0.5
-		}
+		if wind >= 10.0 || rain >= 8.0 { return 0.0 }
+		if wind >= 5.0 || rain >= 3.0 { return 0.5 }
 	}
 	return 1.0
 }
@@ -94,6 +83,7 @@ func recommendHandler(db *sql.DB) http.HandlerFunc {
 		if req.Experience == "beginner" {
 			wToilet *= 1.5
 			wRental *= 1.5
+			wSafety *= 2.0
 			wSafety *= 2.0
 			wAccess *= 1.2
 		} else {
@@ -173,7 +163,6 @@ func recommendHandler(db *sql.DB) http.HandlerFunc {
 	}
 }
 func main() {
-	// データベースファイル（data.db）に接続
 	db, err := sql.Open("sqlite3", "../db/data.db")
 	if err != nil {
 		log.Fatal(err)
