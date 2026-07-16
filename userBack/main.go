@@ -31,7 +31,6 @@ type RecommendRequest struct {
 	LeisureType  string  `json:"leisure_type"`
 	Experience   string  `json:"experience"`
 	WeightToilet float64 `json:"weight_toilet"`
-	WeightToilet float64 `json:"weight_toilet"`
 	WeightRental float64 `json:"weight_rental"`
 	UserText     string  `json:"user_text"`
 	DateString   string  `json:"date_string"` // 🔥 これを追加！
