@@ -30,11 +30,16 @@ type Spot struct {
 type RecommendRequest struct {
 	LeisureType  string  `json:"leisure_type"`
 	Experience   string  `json:"experience"`
-	WeightToilet float64 `json:"weight_toilet"` // スライダー等の基本値（なければ1.0）
+	WeightToilet float64 `json:"weight_toilet"`
 	WeightRental float64 `json:"weight_rental"`
-	CurrentWind  float64 `json:"current_wind"`
-	CurrentRain  float64 `json:"current_rain"`
-	UserText     string  `json:"user_text"` // ユーザーの自由入力テキスト
+	UserText     string  `json:"user_text"`
+	DateString   string  `json:"date_string"` // 🔥 これを追加！
+}
+var leisureBaseEase = map[string]float64{
+	"shopping": 1.0,
+	"fishing":  0.6,
+	"hiking":   0.5,
+	"camp":     0.3,
 }
 
 // レジャーごとの気象セーフティネット判定
@@ -72,35 +77,44 @@ func recommendHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// 1. フロントからのユーザー入力（JSON）をデコード
 		var req RecommendRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		// 🔥 2. 別ファイル（analyzer.go）の関数を呼び出して自由入力を形態素解析
+		// 1. 自由入力テキストの解析（analyzer.go）
 		multToilet, multRental, multSafety, multAccess := ParseUserText(req.UserText)
 
-		// 3. 基本の重みにテキストからの補正倍率を掛け合わせる
 		wToilet := req.WeightToilet * multToilet
 		wRental := req.WeightRental * multRental
 		wSafety := 1.0 * multSafety
 		wAccess := 1.0 * multAccess
 
-		// 4. ユーザーの習熟度（初心者かどうか）による自動補正ロジックを適用
 		if req.Experience == "beginner" {
 			wToilet *= 1.5
 			wRental *= 1.5
-			wSafety *= 2.0 // 初心者は安全性を自動で最重視
+			wSafety *= 2.0
 			wAccess *= 1.2
 		} else {
 			wToilet *= 0.6
 			wRental *= 0.5
 		}
 
-		// 5. SQLで該当するレジャー種別のスポットをDBから抽出
-		rows, err := db.Query("SELECT id, spot_name, leisure_type, lat, lng, score_toilet, score_rental, score_safety, score_access FROM spots WHERE leisure_type = ?", req.LeisureType)
+		// 🔥 【配置場所①】SQLクエリの分岐（ジャンル指定なし・ありの切り替え）
+		var query string
+		var args []interface{}
+
+		if req.LeisureType == "" || req.LeisureType == "any" {
+			// レジャー未選択時：全スポットを抽出
+			query = "SELECT id, spot_name, leisure_type, lat, lng, score_toilet, score_rental, score_safety, score_access FROM spots"
+		} else {
+			// レジャー指定時：そのジャンルのみ抽出
+			query = "SELECT id, spot_name, leisure_type, lat, lng, score_toilet, score_rental, score_safety, score_access FROM spots WHERE leisure_type = ?"
+			args = append(args, req.LeisureType)
+		}
+
+		rows, err := db.Query(query, args...)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -116,32 +130,48 @@ func recommendHandler(db *sql.DB) http.HandlerFunc {
 				continue
 			}
 
-			// 6. 【知能処理：動的重み付き線形結合】の計算
+			// 2. 天気予報の取得（weather.go）
+			wind, rain, err := FetchWeatherForecast(s.Lat, s.Lng, req.DateString)
+			if err != nil {
+				log.Printf("天気取得失敗 (%s): %v", s.SpotName, err)
+				wind, rain = 0.0, 0.0
+			}
+
+			// 3. スポット個別の素点＋重み付けスコア（ベーススコア）
 			baseScore := (s.ScoreToilet * wToilet) +
 				(s.ScoreRental * wRental) +
 				(s.ScoreSafety * wSafety) +
 				(s.ScoreAccess * wAccess)
 
-			// 7. 【セーフティネット判定】天候による安全係数を計算
-			safetyFactor := getWeatherSafetyFactor(s.LeisureType, req.CurrentWind, req.CurrentRain)
+			// 4. 天候セーフティネット判定
+			safetyFactor := getWeatherSafetyFactor(s.LeisureType, wind, rain)
 
-			// 最終スコアの算出（危険なら 0 になる）
-			s.FinalScore = math.Round((baseScore*safetyFactor)*100) / 100
+			// 🔥 【配置場所②】レジャー自体の適合度（手軽さ）補正の計算
+			genreEase := leisureBaseEase[s.LeisureType]
+			if genreEase == 0 {
+				genreEase = 0.5 // 定義されていないジャンルの初期値
+			}
+
+			genreScore := genreEase
+			if req.Experience == "beginner" {
+				genreScore *= 1.5 // 初心者の場合は「手軽なレジャー」を強力ブースト
+			}
+
+			// 5. 最終スコアの算出（スポット評価 × 天候リスク × レジャー手軽さ）
+			s.FinalScore = math.Round((baseScore * safetyFactor * genreScore) * 100) / 100
 
 			spots = append(spots, s)
 		}
 
-		// 8. 計算された FinalScore の高い順にソート（並び替え）
+		// 6. スコア順にソートしてレスポンス返却
 		sort.Slice(spots, func(i, j int) bool {
 			return spots[i].FinalScore > spots[j].FinalScore
 		})
 
-		// 9. 結果をJSONとしてフロントに返却
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(spots)
 	}
 }
-
 func main() {
 	// データベースファイル（data.db）に接続
 	db, err := sql.Open("sqlite3", "../db/data.db")
