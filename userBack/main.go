@@ -33,7 +33,13 @@ type RecommendRequest struct {
 	WeightToilet float64 `json:"weight_toilet"`
 	WeightRental float64 `json:"weight_rental"`
 	UserText     string  `json:"user_text"`
-	DateString   string  `json:"date_string"` // フロントから届く日時 (例: "2026-07-12 15:00:00")
+	DateString   string  `json:"date_string"` // 🔥 これを追加！
+}
+var leisureBaseEase = map[string]float64{
+	"shopping": 1.0,
+	"fishing":  0.6,
+	"hiking":   0.5,
+	"camp":     0.3,
 }
 
 // レジャーごとの気象セーフティネット判定
@@ -51,9 +57,20 @@ func getWeatherSafetyFactor(leisureType string, wind, rain float64) float64 {
 	}
 	return 1.0
 }
-
 func recommendHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// 🔥 1. CORSヘッダーの設定（すべてのオリジンからのアクセスを許可）
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		// 🔥 2. プリフライトリクエスト (OPTIONS) の場合はここで 200 OK を返して即終了する
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		// 3. POSTメソッド以外の拒否チェック（OPTIONSを処理した後に判定する）
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
@@ -65,7 +82,7 @@ func recommendHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// 1. analyzer.go の関数を呼び出して自由入力を形態素解析
+		// 1. 自由入力テキストの解析（analyzer.go）
 		multToilet, multRental, multSafety, multAccess := ParseUserText(req.UserText)
 
 		wToilet := req.WeightToilet * multToilet
@@ -77,14 +94,27 @@ func recommendHandler(db *sql.DB) http.HandlerFunc {
 			wToilet *= 1.5
 			wRental *= 1.5
 			wSafety *= 2.0
+			wSafety *= 2.0
 			wAccess *= 1.2
 		} else {
 			wToilet *= 0.6
 			wRental *= 0.5
 		}
 
-		// 2. DBから該当レジャーのスポットを抽出
-		rows, err := db.Query("SELECT id, spot_name, leisure_type, lat, lng, score_toilet, score_rental, score_safety, score_access FROM spots WHERE leisure_type = ?", req.LeisureType)
+		// 🔥 【配置場所①】SQLクエリの分岐（ジャンル指定なし・ありの切り替え）
+		var query string
+		var args []interface{}
+
+		if req.LeisureType == "" || req.LeisureType == "any" {
+			// レジャー未選択時：全スポットを抽出
+			query = "SELECT id, spot_name, leisure_type, lat, lng, score_toilet, score_rental, score_safety, score_access FROM spots"
+		} else {
+			// レジャー指定時：そのジャンルのみ抽出
+			query = "SELECT id, spot_name, leisure_type, lat, lng, score_toilet, score_rental, score_safety, score_access FROM spots WHERE leisure_type = ?"
+			args = append(args, req.LeisureType)
+		}
+
+		rows, err := db.Query(query, args...)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -100,27 +130,40 @@ func recommendHandler(db *sql.DB) http.HandlerFunc {
 				continue
 			}
 
-			// 🔥 3. weather.go で定義した外部API連携関数を直接呼び出す！
+			// 2. 天気予報の取得（weather.go）
 			wind, rain, err := FetchWeatherForecast(s.Lat, s.Lng, req.DateString)
 			if err != nil {
 				log.Printf("天気取得失敗 (%s): %v", s.SpotName, err)
-				wind, rain = 0.0, 0.0 // エラー時は安全側に倒して続行
+				wind, rain = 0.0, 0.0
 			}
 
-			// 動的重み付き線形結合の計算
+			// 3. スポット個別の素点＋重み付けスコア（ベーススコア）
 			baseScore := (s.ScoreToilet * wToilet) +
 				(s.ScoreRental * wRental) +
 				(s.ScoreSafety * wSafety) +
 				(s.ScoreAccess * wAccess)
 
-			// セーフティネット判定にAPIから引いた風速・雨量をセット
+			// 4. 天候セーフティネット判定
 			safetyFactor := getWeatherSafetyFactor(s.LeisureType, wind, rain)
-			s.FinalScore = math.Round((baseScore*safetyFactor)*100) / 100
+
+			// 🔥 【配置場所②】レジャー自体の適合度（手軽さ）補正の計算
+			genreEase := leisureBaseEase[s.LeisureType]
+			if genreEase == 0 {
+				genreEase = 0.5 // 定義されていないジャンルの初期値
+			}
+
+			genreScore := genreEase
+			if req.Experience == "beginner" {
+				genreScore *= 1.5 // 初心者の場合は「手軽なレジャー」を強力ブースト
+			}
+
+			// 5. 最終スコアの算出（スポット評価 × 天候リスク × レジャー手軽さ）
+			s.FinalScore = math.Round((baseScore * safetyFactor * genreScore) * 100) / 100
 
 			spots = append(spots, s)
 		}
 
-		// 4. スコア順にソート
+		// 6. スコア順にソートしてレスポンス返却
 		sort.Slice(spots, func(i, j int) bool {
 			return spots[i].FinalScore > spots[j].FinalScore
 		})
@@ -129,7 +172,6 @@ func recommendHandler(db *sql.DB) http.HandlerFunc {
 		json.NewEncoder(w).Encode(spots)
 	}
 }
-
 func main() {
 	db, err := sql.Open("sqlite3", "../db/data.db")
 	if err != nil {
