@@ -23,44 +23,31 @@ type Spot struct {
 	ScoreRental float64 `json:"score_rental"`
 	ScoreSafety float64 `json:"score_safety"`
 	ScoreAccess float64 `json:"score_access"`
-	FinalScore  float64 `json:"final_score"` // Go側で計算して格納する
+	FinalScore  float64 `json:"final_score"`
 }
 
-// フロントエンド（ユーザー入力）から届くリクエストの構造体
+// フロントエンドから届くリクエストの構造体
 type RecommendRequest struct {
 	LeisureType  string  `json:"leisure_type"`
 	Experience   string  `json:"experience"`
-	WeightToilet float64 `json:"weight_toilet"` // スライダー等の基本値（なければ1.0）
+	WeightToilet float64 `json:"weight_toilet"`
 	WeightRental float64 `json:"weight_rental"`
-	CurrentWind  float64 `json:"current_wind"`
-	CurrentRain  float64 `json:"current_rain"`
-	UserText     string  `json:"user_text"` // ユーザーの自由入力テキスト
+	UserText     string  `json:"user_text"`
+	DateString   string  `json:"date_string"` // フロントから届く日時 (例: "2026-07-12 15:00:00")
 }
 
 // レジャーごとの気象セーフティネット判定
 func getWeatherSafetyFactor(leisureType string, wind, rain float64) float64 {
 	switch leisureType {
 	case "fishing":
-		if wind >= 8.0 || rain >= 5.0 {
-			return 0.0
-		}
-		if wind >= 4.0 || rain >= 1.0 {
-			return 0.5
-		}
+		if wind >= 8.0 || rain >= 5.0 { return 0.0 }
+		if wind >= 4.0 || rain >= 1.0 { return 0.5 }
 	case "camp":
-		if wind >= 7.0 || rain >= 10.0 {
-			return 0.0
-		}
-		if wind >= 4.0 || rain >= 2.0 {
-			return 0.5
-		}
+		if wind >= 7.0 || rain >= 10.0 { return 0.0 }
+		if wind >= 4.0 || rain >= 2.0 { return 0.5 }
 	case "hiking":
-		if wind >= 10.0 || rain >= 8.0 {
-			return 0.0
-		}
-		if wind >= 5.0 || rain >= 3.0 {
-			return 0.5
-		}
+		if wind >= 10.0 || rain >= 8.0 { return 0.0 }
+		if wind >= 5.0 || rain >= 3.0 { return 0.5 }
 	}
 	return 1.0
 }
@@ -72,34 +59,31 @@ func recommendHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// 1. フロントからのユーザー入力（JSON）をデコード
 		var req RecommendRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		// 🔥 2. 別ファイル（analyzer.go）の関数を呼び出して自由入力を形態素解析
+		// 1. analyzer.go の関数を呼び出して自由入力を形態素解析
 		multToilet, multRental, multSafety, multAccess := ParseUserText(req.UserText)
 
-		// 3. 基本の重みにテキストからの補正倍率を掛け合わせる
 		wToilet := req.WeightToilet * multToilet
 		wRental := req.WeightRental * multRental
 		wSafety := 1.0 * multSafety
 		wAccess := 1.0 * multAccess
 
-		// 4. ユーザーの習熟度（初心者かどうか）による自動補正ロジックを適用
 		if req.Experience == "beginner" {
 			wToilet *= 1.5
 			wRental *= 1.5
-			wSafety *= 2.0 // 初心者は安全性を自動で最重視
+			wSafety *= 2.0
 			wAccess *= 1.2
 		} else {
 			wToilet *= 0.6
 			wRental *= 0.5
 		}
 
-		// 5. SQLで該当するレジャー種別のスポットをDBから抽出
+		// 2. DBから該当レジャーのスポットを抽出
 		rows, err := db.Query("SELECT id, spot_name, leisure_type, lat, lng, score_toilet, score_rental, score_safety, score_access FROM spots WHERE leisure_type = ?", req.LeisureType)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -116,34 +100,37 @@ func recommendHandler(db *sql.DB) http.HandlerFunc {
 				continue
 			}
 
-			// 6. 【知能処理：動的重み付き線形結合】の計算
+			// 🔥 3. weather.go で定義した外部API連携関数を直接呼び出す！
+			wind, rain, err := FetchWeatherForecast(s.Lat, s.Lng, req.DateString)
+			if err != nil {
+				log.Printf("天気取得失敗 (%s): %v", s.SpotName, err)
+				wind, rain = 0.0, 0.0 // エラー時は安全側に倒して続行
+			}
+
+			// 動的重み付き線形結合の計算
 			baseScore := (s.ScoreToilet * wToilet) +
 				(s.ScoreRental * wRental) +
 				(s.ScoreSafety * wSafety) +
 				(s.ScoreAccess * wAccess)
 
-			// 7. 【セーフティネット判定】天候による安全係数を計算
-			safetyFactor := getWeatherSafetyFactor(s.LeisureType, req.CurrentWind, req.CurrentRain)
-
-			// 最終スコアの算出（危険なら 0 になる）
+			// セーフティネット判定にAPIから引いた風速・雨量をセット
+			safetyFactor := getWeatherSafetyFactor(s.LeisureType, wind, rain)
 			s.FinalScore = math.Round((baseScore*safetyFactor)*100) / 100
 
 			spots = append(spots, s)
 		}
 
-		// 8. 計算された FinalScore の高い順にソート（並び替え）
+		// 4. スコア順にソート
 		sort.Slice(spots, func(i, j int) bool {
 			return spots[i].FinalScore > spots[j].FinalScore
 		})
 
-		// 9. 結果をJSONとしてフロントに返却
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(spots)
 	}
 }
 
 func main() {
-	// データベースファイル（data.db）に接続
 	db, err := sql.Open("sqlite3", "../db/data.db")
 	if err != nil {
 		log.Fatal(err)
