@@ -57,9 +57,20 @@ func getWeatherSafetyFactor(leisureType string, wind, rain float64) float64 {
 	}
 	return 1.0
 }
-
 func recommendHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// 🔥 1. CORSヘッダーの設定（すべてのオリジンからのアクセスを許可）
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		// 🔥 2. プリフライトリクエスト (OPTIONS) の場合はここで 200 OK を返して即終了する
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		// 3. POSTメソッド以外の拒否チェック（OPTIONSを処理した後に判定する）
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
