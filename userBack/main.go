@@ -143,6 +143,8 @@ func recommendHandler(db *sql.DB) http.HandlerFunc {
 			query = "SELECT id, spot_name, leisure_type, lat, lng, score_toilet, score_rental, score_safety, score_access, address, url, image_url, description FROM spots WHERE leisure_type = ?"
 			args = append(args, targetLeisure)
 		}
+		
+		// (省略: レジャー指定に応じた WHERE 句の結合処理)
 
 		rows, err := db.Query(query, args...)
 		if err != nil {
@@ -159,6 +161,7 @@ func recommendHandler(db *sql.DB) http.HandlerFunc {
 				&s.ScoreToilet, &s.ScoreRental, &s.ScoreSafety, &s.ScoreAccess,
 				&s.Address, &s.URL, &s.ImageURL, &s.Description,
 			)
+			// 修正: 2回目の err := rows.Scan(...) を削除
 			if err != nil {
 				log.Println(err)
 				continue
@@ -220,8 +223,8 @@ func recommendHandler(db *sql.DB) http.HandlerFunc {
 			return spots[i].FinalScore > spots[j].FinalScore
 		})
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(spots)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(spots)
 	}
 }
 

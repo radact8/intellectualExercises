@@ -44,24 +44,25 @@ export default function RecommendApp() {
       date_string: formattedDate,
     };
 
-    try {
-      const response = await fetch('http://localhost:8080/api/recommend', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
+    // RecommendApp.jsx の handleSubmit 内
+  try {
+    const response = await fetch('http://localhost:8080/api/recommend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
 
-      if (!response.ok) {
-        throw new Error(`エラーが発生しました: ${response.statusText}`);
-      }
+    if (!response.ok) {
+      // 🔥 Goから返ってきた 400 エラーメッセージを取得して表示する
+      const errorText = await response.text();
+      throw new Error(errorText || '入力内容にエラーがあります。');
+    }
 
-      const data = await response.json();
-      setResults(data);
-    } catch (err) {
-      setError(err.message || 'APIとの通信に失敗しました。');
-    } finally {
+    const data = await response.json();
+    setResults(data);
+  } catch (err) {
+    setError(err.message); // 画面上に「リクエストエラー: 予定日時が入力されていません」と赤字で表示される
+  } finally {
       setLoading(false);
     }
   };
@@ -169,42 +170,90 @@ export default function RecommendApp() {
       )}
 
       {/* 📤 2. レスポンス結果表示領域 */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-bold text-gray-800 mb-4">検索結果 ({results.length}件)</h2>
+<div className="space-y-4">
+  <h2 className="text-xl font-bold text-gray-800 mb-4">検索結果 ({results.length}件)</h2>
 
-        {results.map((spot, index) => (
-          <div
-            key={spot.id || index}
-            className="bg-white p-5 rounded-lg shadow border-l-4 border-blue-500 hover:shadow-lg transition"
-          >
-            <div className="flex justify-between items-start mb-2">
-              <div>
-                <span className="text-sm font-bold text-blue-600 mr-2">#{index + 1}</span>
-                <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded uppercase mr-2">
-                  {spot.leisure_type}
-                </span>
-                <h3 className="text-lg font-bold text-gray-900 inline">{spot.spot_name}</h3>
-              </div>
-              <div className="text-right">
-                <span className="text-2xl font-extrabold text-blue-600">{spot.final_score}</span>
-                <span className="text-xs text-gray-500 ml-1">点</span>
-              </div>
-            </div>
+  {results.map((spot, index) => (
+    <div
+      key={spot.id || index}
+      className="bg-white p-5 rounded-lg shadow border-l-4 border-blue-500 hover:shadow-lg transition flex flex-col md:flex-row gap-4"
+    >
+      {/* 📸 施設画像 (存在する場合のみ表示) */}
+      {spot.image_url && (
+        <div className="w-full md:w-48 h-36 flex-shrink-0">
+          <img
+            src={spot.image_url}
+            alt={spot.spot_name}
+            className="w-full h-full object-cover rounded-md"
+          />
+        </div>
+      )}
 
-            {/* 各評価軸のスコア（素点）バッジ */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3 text-xs bg-gray-50 p-3 rounded">
-              <div>🚽 トイレ: <span className="font-bold">{spot.score_toilet}</span></div>
-              <div>🎒 レンタル: <span className="font-bold">{spot.score_rental}</span></div>
-              <div>🛡️ 安全性: <span className="font-bold">{spot.score_safety}</span></div>
-              <div>🚗 アクセス: <span className="font-bold">{spot.score_access}</span></div>
-            </div>
+      {/* 📝 施設詳細メイン情報 */}
+      <div className="flex-1">
+        <div className="flex justify-between items-start mb-1">
+          <div>
+            <span className="text-sm font-bold text-blue-600 mr-2">#{index + 1}</span>
+            <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded uppercase mr-2">
+              {spot.leisure_type}
+            </span>
+            <h3 className="text-lg font-bold text-gray-900 inline">{spot.spot_name}</h3>
           </div>
-        ))}
+          <div className="text-right">
+            <span className="text-2xl font-extrabold text-blue-600">{spot.final_score}</span>
+            <span className="text-xs text-gray-500 ml-1">点</span>
+          </div>
+        </div>
 
-        {!loading && results.length === 0 && (
-          <p className="text-center text-gray-500 py-8">条件を指定して検索してください。</p>
+        {/* 📍 住所 & 説明文 */}
+        {spot.address && (
+          <p className="text-xs text-gray-500 mb-1">📍 {spot.address}</p>
+        )}
+        {spot.description && (
+          <p className="text-sm text-gray-600 mb-3 line-clamp-2">{spot.description}</p>
+        )}
+
+        {/* 🌤️ ピンポイント天気 & 警告情報（Goから返ってきた場合表示） */}
+        {(spot.wind_speed !== undefined || spot.weather_warning) && (
+          <div className="bg-blue-50 border border-blue-100 p-2.5 rounded-md mb-3 text-xs">
+            <div className="flex items-center justify-between text-blue-800 font-medium">
+              <span>🌤️ 現地予報 (風速: {spot.wind_speed}m/s | 雨量: {spot.rain_volume}mm/h)</span>
+            </div>
+            {spot.weather_warning && (
+              <p className="text-red-600 font-bold mt-1">{spot.weather_warning}</p>
+            )}
+          </div>
+        )}
+
+        {/* 📊 各評価軸のスコア（素点）バッジ */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs bg-gray-50 p-2.5 rounded mb-3">
+          <div>🚽 トイレ: <span className="font-bold">{spot.score_toilet}</span></div>
+          <div>🎒 レンタル: <span className="font-bold">{spot.score_rental}</span></div>
+          <div>🛡️ 安全性: <span className="font-bold">{spot.score_safety}</span></div>
+          <div>🚗 アクセス: <span className="font-bold">{spot.score_access}</span></div>
+        </div>
+
+        {/* 🔗 公式サイト・予約リンク */}
+        {spot.url && (
+          <div className="text-right">
+            <a
+              href={spot.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-3 rounded transition duration-150"
+            >
+              公式サイト / 予約ページを見る ↗
+            </a>
+          </div>
         )}
       </div>
+    </div>
+  ))}
+
+  {!loading && results.length === 0 && (
+    <p className="text-center text-gray-500 py-8">条件を指定して検索してください。</p>
+  )}
+</div>
     </div>
   );
 }

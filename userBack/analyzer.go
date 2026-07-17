@@ -43,20 +43,27 @@ func ParseAreaKeyword(text string) []string {
 
 	var matchedPrefectures []string
 
-	// 地域・都道府県辞書とのマッチング
+	// 1. 地域・都道府県辞書とのマッチング
 	for key, prefList := range areaMap {
 		if strings.Contains(text, key) {
 			matchedPrefectures = append(matchedPrefectures, prefList...)
 		}
 	}
 
+	// 2. 辞書になかった場合、入力テキストそのものをフィルタキーワードとして使う
+	if len(matchedPrefectures) == 0 {
+		// ※必要に応じて形態素解析等で名詞（地名）だけ抜くことも可能です
+		matchedPrefectures = append(matchedPrefectures, text)
+	}
+
 	return matchedPrefectures
 }
-
 func ParseUserText(userInput string) (float64, float64, float64, float64) {
 	mToilet, mRental, mSafety, mAccess := 1.0, 1.0, 1.0, 1.0
 
+	// 修正: text ではなく userInput を判定
 	if userInput == "" {
+		// 修正: mult... ではなく m... を返却
 		return mToilet, mRental, mSafety, mAccess
 	}
 

@@ -31,6 +31,7 @@ func FetchWeatherForecast(lat, lng float64, targetDateStr string) (float64, floa
 	// 1. 未入力判定（エラーを返す）
 	if targetDateStr == "" {
 		return windSpeed, rainVolume, fmt.Errorf("予定日時（date_string）が入力されていません")
+		return windSpeed, rainVolume, fmt.Errorf("予定日時（date_string）が入力されていません")
 	}
 
 	// 2. JSTでパース（フォーマットは 15:04:05）
