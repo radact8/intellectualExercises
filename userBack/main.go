@@ -49,7 +49,6 @@ var leisureBaseEase = map[string]float64{
 	"camp":     0.3,
 }
 
-// 2. 天候による減点判定 ＆ ユーザー向け詳細メッセージ返却
 func getWeatherSafetyFactor(leisureType string, wind, rain float64) (float64, string) {
 	switch leisureType {
 	case "fishing":
@@ -99,10 +98,10 @@ func recommendHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// 1. テキスト解析（重視軸、レジャー意図、エリア抽出）
+		// 1. テキスト解析
 		multToilet, multRental, multSafety, multAccess := ParseUserText(req.UserText)
 		leisureSentiments := ParseLeisureSentiment(req.UserText, req.LeisureType)
-		targetAreas := ParseAreaKeyword(req.UserText) // 👈 1. エリア抽出
+		targetAreas := ParseAreaKeyword(req.UserText)
 
 		detectedLeisure := ""
 		if req.LeisureType == "" || req.LeisureType == "any" {
@@ -143,8 +142,6 @@ func recommendHandler(db *sql.DB) http.HandlerFunc {
 			query = "SELECT id, spot_name, leisure_type, lat, lng, score_toilet, score_rental, score_safety, score_access, address, url, image_url, description FROM spots WHERE leisure_type = ?"
 			args = append(args, targetLeisure)
 		}
-		
-		// (省略: レジャー指定に応じた WHERE 句の結合処理)
 
 		rows, err := db.Query(query, args...)
 		if err != nil {
@@ -161,13 +158,12 @@ func recommendHandler(db *sql.DB) http.HandlerFunc {
 				&s.ScoreToilet, &s.ScoreRental, &s.ScoreSafety, &s.ScoreAccess,
 				&s.Address, &s.URL, &s.ImageURL, &s.Description,
 			)
-			// 修正: 2回目の err := rows.Scan(...) を削除
 			if err != nil {
 				log.Println(err)
 				continue
 			}
 
-			// 1. エリア（住所）フィルタリング判定
+			// エリアフィルタリング
 			if len(targetAreas) > 0 {
 				matched := false
 				for _, area := range targetAreas {
@@ -177,11 +173,19 @@ func recommendHandler(db *sql.DB) http.HandlerFunc {
 					}
 				}
 				if !matched {
-					continue // エエリア条件に合致しないスポットはスキップ
+					continue
 				}
 			}
 
-			// 天気予報取得
+			// 重視軸スコアが 0 以下のスポットを除外する処理
+			if (wToilet >= 1.5 && s.ScoreToilet <= 0) ||
+				(wRental >= 1.5 && s.ScoreRental <= 0) ||
+				(wSafety >= 1.5 && s.ScoreSafety <= 0) ||
+				(wAccess >= 1.5 && s.ScoreAccess <= 0) {
+				continue
+			}
+
+			// 天気予報の取得
 			wind, rain, err := FetchWeatherForecast(s.Lat, s.Lng, req.DateString)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("リクエストエラー: %v", err), http.StatusBadRequest)
@@ -191,7 +195,6 @@ func recommendHandler(db *sql.DB) http.HandlerFunc {
 			s.WindSpeed = math.Round(wind*10) / 10
 			s.RainVolume = math.Round(rain*10) / 10
 
-			// 2. 天候による安全度倍率 ＆ メッセージ設定
 			safetyFactor, warningMsg := getWeatherSafetyFactor(s.LeisureType, wind, rain)
 			s.WeatherWarning = warningMsg
 
@@ -223,8 +226,12 @@ func recommendHandler(db *sql.DB) http.HandlerFunc {
 			return spots[i].FinalScore > spots[j].FinalScore
 		})
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(spots)
+		if spots == nil {
+			spots = []Spot{}
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(spots)
 	}
 }
 
