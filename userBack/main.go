@@ -8,33 +8,40 @@ import (
 	"math"
 	"net/http"
 	"sort"
+	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// DBから取得するスポットの構造体
 type Spot struct {
-	ID          int     `json:"id"`
-	SpotName    string  `json:"spot_name"`
-	LeisureType string  `json:"leisure_type"`
-	Lat         float64 `json:"lat"`
-	Lng         float64 `json:"lng"`
-	ScoreToilet float64 `json:"score_toilet"`
-	ScoreRental float64 `json:"score_rental"`
-	ScoreSafety float64 `json:"score_safety"`
-	ScoreAccess float64 `json:"score_access"`
-	FinalScore  float64 `json:"final_score"`
+	ID             int     `json:"id"`
+	SpotName       string  `json:"spot_name"`
+	LeisureType    string  `json:"leisure_type"`
+	Lat            float64 `json:"lat"`
+	Lng            float64 `json:"lng"`
+	ScoreToilet    float64 `json:"score_toilet"`
+	ScoreRental    float64 `json:"score_rental"`
+	ScoreSafety    float64 `json:"score_safety"`
+	ScoreAccess    float64 `json:"score_access"`
+	FinalScore     float64 `json:"final_score"`
+	Address        string  `json:"address"`
+	URL            string  `json:"url"`
+	ImageURL       string  `json:"image_url"`
+	Description    string  `json:"description"`
+	WindSpeed      float64 `json:"wind_speed"`
+	RainVolume     float64 `json:"rain_volume"`
+	WeatherWarning string  `json:"weather_warning"`
 }
 
-// フロントエンドから届くリクエストの構造体
 type RecommendRequest struct {
 	LeisureType  string  `json:"leisure_type"`
 	Experience   string  `json:"experience"`
 	WeightToilet float64 `json:"weight_toilet"`
 	WeightRental float64 `json:"weight_rental"`
 	UserText     string  `json:"user_text"`
-	DateString   string  `json:"date_string"` // 🔥 これを追加！
+	DateString   string  `json:"date_string"`
 }
+
 var leisureBaseEase = map[string]float64{
 	"shopping": 1.0,
 	"fishing":  0.6,
@@ -42,35 +49,45 @@ var leisureBaseEase = map[string]float64{
 	"camp":     0.3,
 }
 
-// レジャーごとの気象セーフティネット判定
-func getWeatherSafetyFactor(leisureType string, wind, rain float64) float64 {
+// 2. 天候による減点判定 ＆ ユーザー向け詳細メッセージ返却
+func getWeatherSafetyFactor(leisureType string, wind, rain float64) (float64, string) {
 	switch leisureType {
 	case "fishing":
-		if wind >= 8.0 || rain >= 5.0 { return 0.0 }
-		if wind >= 4.0 || rain >= 1.0 { return 0.5 }
+		if wind >= 8.0 || rain >= 5.0 {
+			return 0.0, fmt.Sprintf("⛔ 危険（風速%.1fm/s, 雨量%.1fmm/h）: 高波や落雷の危険があるため非推奨です", wind, rain)
+		}
+		if wind >= 4.0 || rain >= 1.0 {
+			return 0.5, fmt.Sprintf("⚠️ 注意（風速%.1fm/s, 雨量%.1fmm/h）: やや風・雨が強くライントラブルのリスクがあります", wind, rain)
+		}
 	case "camp":
-		if wind >= 7.0 || rain >= 10.0 { return 0.0 }
-		if wind >= 4.0 || rain >= 2.0 { return 0.5 }
+		if wind >= 7.0 || rain >= 10.0 {
+			return 0.0, fmt.Sprintf("⛔ 危険（風速%.1fm/s, 雨量%.1fmm/h）: 狂風・大雨によりテント設営不能・浸水リスクがあります", wind, rain)
+		}
+		if wind >= 4.0 || rain >= 2.0 {
+			return 0.5, fmt.Sprintf("⚠️ 注意（風速%.1fm/s, 雨量%.1fmm/h）: ペグ打ちの補強やタープの耐風対策が必要です", wind, rain)
+		}
 	case "hiking":
-		if wind >= 10.0 || rain >= 8.0 { return 0.0 }
-		if wind >= 5.0 || rain >= 3.0 { return 0.5 }
+		if wind >= 10.0 || rain >= 8.0 {
+			return 0.0, fmt.Sprintf("⛔ 危険（風速%.1fm/s, 雨量%.1fmm/h）: 滑落・低体温症・ぬかるみの危険があるため登山中止を強く推奨します", wind, rain)
+		}
+		if wind >= 5.0 || rain >= 3.0 {
+			return 0.5, fmt.Sprintf("⚠️ 注意（風速%.1fm/s, 雨量%.1fmm/h）: 足元が滑りやすくなっているためレインウェアと十分な装備が必要です", wind, rain)
+		}
 	}
-	return 1.0
+	return 1.0, "☀️ コンディション良好: 安全に楽しめる天候予報です"
 }
+
 func recommendHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// 🔥 1. CORSヘッダーの設定（すべてのオリジンからのアクセスを許可）
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
-		// 🔥 2. プリフライトリクエスト (OPTIONS) の場合はここで 200 OK を返して即終了する
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusOK)
 			return
 		}
 
-		// 3. POSTメソッド以外の拒否チェック（OPTIONSを処理した後に判定する）
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
@@ -82,8 +99,20 @@ func recommendHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// 1. 自由入力テキストの解析（analyzer.go）
+		// 1. テキスト解析（重視軸、レジャー意図、エリア抽出）
 		multToilet, multRental, multSafety, multAccess := ParseUserText(req.UserText)
+		leisureSentiments := ParseLeisureSentiment(req.UserText, req.LeisureType)
+		targetAreas := ParseAreaKeyword(req.UserText) // 👈 1. エリア抽出
+
+		detectedLeisure := ""
+		if req.LeisureType == "" || req.LeisureType == "any" {
+			for leisure, mult := range leisureSentiments {
+				if mult > 1.0 {
+					detectedLeisure = leisure
+					break
+				}
+			}
+		}
 
 		wToilet := req.WeightToilet * multToilet
 		wRental := req.WeightRental * multRental
@@ -94,24 +123,25 @@ func recommendHandler(db *sql.DB) http.HandlerFunc {
 			wToilet *= 1.5
 			wRental *= 1.5
 			wSafety *= 2.0
-			wSafety *= 2.0
 			wAccess *= 1.2
 		} else {
 			wToilet *= 0.6
 			wRental *= 0.5
 		}
 
-		// 🔥 【配置場所①】SQLクエリの分岐（ジャンル指定なし・ありの切り替え）
+		targetLeisure := req.LeisureType
+		if (targetLeisure == "" || targetLeisure == "any") && detectedLeisure != "" {
+			targetLeisure = detectedLeisure
+		}
+
 		var query string
 		var args []interface{}
 
-		if req.LeisureType == "" || req.LeisureType == "any" {
-			// レジャー未選択時：全スポットを抽出
-			query = "SELECT id, spot_name, leisure_type, lat, lng, score_toilet, score_rental, score_safety, score_access FROM spots"
+		if targetLeisure == "" || targetLeisure == "any" {
+			query = "SELECT id, spot_name, leisure_type, lat, lng, score_toilet, score_rental, score_safety, score_access, address, url, image_url, description FROM spots"
 		} else {
-			// レジャー指定時：そのジャンルのみ抽出
-			query = "SELECT id, spot_name, leisure_type, lat, lng, score_toilet, score_rental, score_safety, score_access FROM spots WHERE leisure_type = ?"
-			args = append(args, req.LeisureType)
+			query = "SELECT id, spot_name, leisure_type, lat, lng, score_toilet, score_rental, score_safety, score_access, address, url, image_url, description FROM spots WHERE leisure_type = ?"
+			args = append(args, targetLeisure)
 		}
 
 		rows, err := db.Query(query, args...)
@@ -124,46 +154,68 @@ func recommendHandler(db *sql.DB) http.HandlerFunc {
 		var spots []Spot
 		for rows.Next() {
 			var s Spot
-			err := rows.Scan(&s.ID, &s.SpotName, &s.LeisureType, &s.Lat, &s.Lng, &s.ScoreToilet, &s.ScoreRental, &s.ScoreSafety, &s.ScoreAccess)
+			err := rows.Scan(
+				&s.ID, &s.SpotName, &s.LeisureType, &s.Lat, &s.Lng,
+				&s.ScoreToilet, &s.ScoreRental, &s.ScoreSafety, &s.ScoreAccess,
+				&s.Address, &s.URL, &s.ImageURL, &s.Description,
+			)
 			if err != nil {
 				log.Println(err)
 				continue
 			}
 
-			// 2. 天気予報の取得（weather.go）
-			wind, rain, err := FetchWeatherForecast(s.Lat, s.Lng, req.DateString)
-			if err != nil {
-				log.Printf("天気取得失敗 (%s): %v", s.SpotName, err)
-				wind, rain = 0.0, 0.0
+			// 1. エリア（住所）フィルタリング判定
+			if len(targetAreas) > 0 {
+				matched := false
+				for _, area := range targetAreas {
+					if strings.Contains(s.Address, area) {
+						matched = true
+						break
+					}
+				}
+				if !matched {
+					continue // エエリア条件に合致しないスポットはスキップ
+				}
 			}
 
-			// 3. スポット個別の素点＋重み付けスコア（ベーススコア）
+			// 天気予報取得
+			wind, rain, err := FetchWeatherForecast(s.Lat, s.Lng, req.DateString)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("リクエストエラー: %v", err), http.StatusBadRequest)
+				return
+			}
+
+			s.WindSpeed = math.Round(wind*10) / 10
+			s.RainVolume = math.Round(rain*10) / 10
+
+			// 2. 天候による安全度倍率 ＆ メッセージ設定
+			safetyFactor, warningMsg := getWeatherSafetyFactor(s.LeisureType, wind, rain)
+			s.WeatherWarning = warningMsg
+
 			baseScore := (s.ScoreToilet * wToilet) +
 				(s.ScoreRental * wRental) +
 				(s.ScoreSafety * wSafety) +
 				(s.ScoreAccess * wAccess)
 
-			// 4. 天候セーフティネット判定
-			safetyFactor := getWeatherSafetyFactor(s.LeisureType, wind, rain)
-
-			// 🔥 【配置場所②】レジャー自体の適合度（手軽さ）補正の計算
 			genreEase := leisureBaseEase[s.LeisureType]
 			if genreEase == 0 {
-				genreEase = 0.5 // 定義されていないジャンルの初期値
+				genreEase = 0.5
 			}
 
 			genreScore := genreEase
 			if req.Experience == "beginner" {
-				genreScore *= 1.5 // 初心者の場合は「手軽なレジャー」を強力ブースト
+				genreScore *= 1.5
 			}
 
-			// 5. 最終スコアの算出（スポット評価 × 天候リスク × レジャー手軽さ）
+			if sentimentMult, exists := leisureSentiments[s.LeisureType]; exists {
+				genreScore *= sentimentMult
+			}
+
 			s.FinalScore = math.Round((baseScore * safetyFactor * genreScore) * 100) / 100
 
 			spots = append(spots, s)
 		}
 
-		// 6. スコア順にソートしてレスポンス返却
 		sort.Slice(spots, func(i, j int) bool {
 			return spots[i].FinalScore > spots[j].FinalScore
 		})
@@ -172,6 +224,7 @@ func recommendHandler(db *sql.DB) http.HandlerFunc {
 		json.NewEncoder(w).Encode(spots)
 	}
 }
+
 func main() {
 	db, err := sql.Open("sqlite3", "../db/data.db")
 	if err != nil {
